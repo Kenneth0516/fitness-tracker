@@ -25,7 +25,7 @@ React、TypeScript、Vite、Tailwind CSS、Dexie.js、Recharts、Lucide、Workbo
 | `vite.config.ts`、`.github/workflows/deploy.yml` | 靜態建置、PWA 及部署 |
 | `tests/` | Vitest 邏輯與 IndexedDB 測試，以及 Playwright 瀏覽器測試 |
 
-Workout、動作及 Sets 在同一筆紀錄內保存，保留順序和各自的 ID。Template 只保存名稱、動作 ID 及順序，再加上 ID 和時間戳。歷史 Workout 保留原 Template 的 ID 與當時名稱，因此可以查閱或篩選已刪除 Template 建立的紀錄。IndexedDB schema 從 v1 開始，可透過 Dexie 追加 migration。備份的 Schema Version 另外用於檔案格式相容。
+Workout、動作及 Sets 在同一筆紀錄內保存，保留順序和各自的 ID。Template 保存名稱、動作順序及選填的每動作組數，再加上 ID 和時間戳。套用的組數會建立空白 Sets，由使用者填寫重量與 Reps。歷史 Workout 保留原 Template 的 ID 與當時名稱，因此可以查閱或篩選已刪除 Template 建立的紀錄。IndexedDB schema 從 v1 開始，可透過 Dexie 追加 migration。備份的 Schema Version 另外用於檔案格式相容。
 
 ## 本機開發
 

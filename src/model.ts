@@ -43,8 +43,13 @@ export const exerciseSchema = base.extend({
   prEligible: z.boolean(), builtIn: z.boolean(), archived: z.boolean(), notes: note,
 }).refine(exercise => !exercise.prEligible || supportsPR(exercise.weightType))
 
+export const maxTemplateSetCount = 99
+
 export const templateSchema = base.extend({
   name, exerciseIds: z.array(id).min(1, '請至少加入一個動作。').refine(unique),
+  setCounts: z.record(id, z.int().min(1).max(maxTemplateSetCount)).optional(),
+}).refine(template => Object.keys(template.setCounts ?? {}).every(id => template.exerciseIds.includes(id)), {
+  path: ['setCounts'], message: '組數設定必須對應此 Template 內的動作。',
 })
 
 const workoutSetSchema = z.object({ id, weight, reps })

@@ -21,6 +21,20 @@ function workout(weight: string, date: string, reps = '8') {
 }
 
 describe('Workout editor', () => {
+  test('prepares independent blank Sets using the count for each Template exercise', () => {
+    const template = {
+      id: 'template', name: 'Upper A', exerciseIds: [pushup.id, bench.id, squat.id],
+      setCounts: { [bench.id]: 3, [pushup.id]: 2 }, createdAt: stamp, updatedAt: stamp,
+    }
+    const draft = createDraft('2026-03-01', 'Upper A', [pushup, bench, squat], template)
+    expect(draft.exercises.map(exercise => exercise.sets.length)).toEqual([2, 3, 0])
+    const sets = draft.exercises.flatMap(exercise => exercise.sets)
+    expect(new Set(sets.map(set => set.id)).size).toBe(5)
+    expect(sets.every(set => set.weight === '' && set.reps === '')).toBe(true)
+    Object.assign(draft.exercises[1].sets[0], { weight: '12', reps: '8' })
+    expect(prepareWorkout(draft, definitions).exercises.map(exercise => exercise.sets.length)).toEqual([1])
+  })
+
   test('validates sets independently, ignores blank sets/exercises, and normalizes reps-only', () => {
     const draft = createDraft('2026-03-01', '  Upper A  ', [bench, squat, pushup])
     draft.exercises[0].sets = [{ id: '1', weight: '', reps: '' }, { id: '2', weight: '12,5', reps: '8' }]

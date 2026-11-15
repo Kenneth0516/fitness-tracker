@@ -68,6 +68,21 @@ test('templates preserve historical attribution and recorded exercises can be re
     data.exercises.find(item => item.id === exercise.id)!.updatedAt)).rejects.toThrow('鎖定')
 })
 
+test('backs up Template set counts and rejects counts for missing exercises or invalid quantities', async () => {
+  const { exercises } = await getSnapshot()
+  const id = exercises[0].id
+  const stamp = nowIso()
+  const template = { id: 'preset', name: 'Upper A', exerciseIds: [id], setCounts: { [id]: 3 }, createdAt: stamp, updatedAt: stamp }
+  await saveTemplate(template)
+  const data = await getSnapshot()
+  expect(parseBackup(serializeBackup(data)).templates).toEqual([template])
+  for (const setCounts of [{ [id]: 0 }, { [id]: 1.5 }, { [id]: 100 }, { missing: 2 }]) {
+    const invalid = { ...template, setCounts }
+    await expect(saveTemplate(invalid, stamp)).rejects.toThrow()
+    expect(() => parseBackup(serializeBackup({ ...data, templates: [invalid] }))).toThrow('備份欄位無效')
+  }
+})
+
 test('manual PR must beat the current maximum even when entered on an old date', async () => {
   const { exercise, updated } = await example()
   await commitDraft(updated.id, updated.revision)

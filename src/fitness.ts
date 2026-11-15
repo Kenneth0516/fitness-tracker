@@ -17,7 +17,12 @@ export function createDraft(date: string, name: string, exercises: Exercise[], t
   return {
     id: uid(), revision: uid(), date, name, source: null, createdAt: stamp, updatedAt: stamp,
     template: template ? { templateId: template.id, templateName: template.name } : null,
-    exercises: exercises.map(newDraftExercise),
+    exercises: exercises.map(exercise => {
+      const draftExercise = newDraftExercise(exercise)
+      const count = template?.setCounts?.[exercise.id] ?? 0
+      draftExercise.sets = Array.from({ length: count }, () => newDraftSet(draftExercise))
+      return draftExercise
+    }),
   }
 }
 

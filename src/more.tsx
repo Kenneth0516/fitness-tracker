@@ -3,7 +3,7 @@ import { Archive, ArrowRight, BookOpen, ChevronRight, Copy, DatabaseBackup, Down
 import { downloadFile, parseBackup, serializeBackup, serializeCsv } from './backup'
 import { db, getSnapshot, markBackup, removeRecord, replaceSnapshot, saveExercise, saveTemplate, type Snapshot } from './db'
 import {
-  type Exercise, type WorkoutTemplate, equipment, equipmentLabels, localDate, muscleLabels, muscles, nowIso, supportsPR, uid, weightLabels, weightTypes,
+  type Exercise, type WorkoutTemplate, equipment, equipmentLabels, localDate, maxTemplateSetCount, muscleLabels, muscles, nowIso, supportsPR, uid, weightLabels, weightTypes,
 } from './model'
 import {
   BackButton, Button, Confirm, Dialog, Empty, ExercisePicker, Field, FormActions, IconButton, Notice, OrderActions, PageHeading, SectionHeading, Tile,
@@ -131,12 +131,16 @@ export function TemplatesPage({ snapshot, navigate, notify, creating }: Props & 
   function close() { setEditing(null); if (creating) navigate('more/templates') }
   return <>
     <BackButton onClick={() => navigate('more')}>返回更多</BackButton>
-    <PageHeading title="Workout Templates" description="儲存常用動作與順序，開始 Workout 時直接套用。"
+    <PageHeading title="Workout Templates" description="儲存常用動作、順序與組數，開始 Workout 時直接套用。"
       action={<Button variant="primary" icon={Plus} onClick={() => navigate('more/templates/new')}>新增 Template</Button>} />
     <section className="panel">
       <SectionHeading title="我的 Templates" icon={FileStack} tone="violet" count={templates.length} />
       {templates.length ? templates.map(template => <div key={template.id} className="list-row">
-        <div className="row-text"><strong>{template.name}</strong><small>{template.exerciseIds.length} 個動作 · {template.exerciseIds.map(id => byId.get(id)?.name).join('、')}</small></div>
+        <div className="row-text"><strong>{template.name}</strong><small>{template.exerciseIds.length} 個動作 · {template.exerciseIds.map(id => {
+          const name = byId.get(id)?.name ?? id
+          const count = template.setCounts?.[id]
+          return count === undefined ? name : `${name} × ${count} 組`
+        }).join('、')}</small></div>
         <div className="inline-actions">
           <IconButton icon={Pencil} label={`編輯 ${template.name}`} onClick={() => setEditing({ template, duplicate: false })} />
           <IconButton icon={Copy} label={`複製 ${template.name}`} onClick={() => setEditing({ template, duplicate: true })} />
@@ -155,7 +159,9 @@ function TemplateForm({ initial, duplicate, snapshot, onClose, onSaved }: {
   initial?: WorkoutTemplate; duplicate?: boolean; snapshot: Snapshot; onClose: () => void; onSaved: () => void
 }) {
   const [name, setName] = useState(duplicate && initial ? `${initial.name.slice(0, 95)}（副本）` : initial?.name ?? '')
-  const [ids, setIds] = useState(initial?.exerciseIds ?? [])
+  const [rows, setRows] = useState(() => initial?.exerciseIds.map(id => ({
+    id, setCount: initial.setCounts?.[id]?.toString() ?? '',
+  })) ?? [])
   const [picking, setPicking] = useState(false)
   const byId = new Map(snapshot.exercises.map(exercise => [exercise.id, exercise]))
   const action = useAction()
@@ -164,26 +170,42 @@ function TemplateForm({ initial, duplicate, snapshot, onClose, onSaved }: {
     <Dialog wide title={duplicate ? '複製 Template' : initial ? '編輯 Template' : '新增 Template'} onClose={() => { if (!action.pending) onClose() }}>
       <form className="stack compact" onSubmit={onSubmit(action, async () => {
         const stamp = nowIso()
-        await saveTemplate({ id: original?.id ?? uid(), name, exerciseIds: ids,
+        const setCounts = Object.fromEntries(rows.filter(row => row.setCount !== '').map(row => [row.id, Number(row.setCount)]))
+        await saveTemplate({ id: original?.id ?? uid(), name, exerciseIds: rows.map(row => row.id),
+          setCounts: Object.keys(setCounts).length ? setCounts : undefined,
           createdAt: original?.createdAt ?? stamp, updatedAt: stamp }, original?.updatedAt)
         onSaved()
       })}>
         <Field label="Template 名稱"><input autoFocus required maxLength={100} value={name} onChange={event => setName(event.target.value)} /></Field>
         <div className="editor-heading"><h3>動作順序</h3><Button onClick={() => setPicking(true)} icon={Plus}>加入動作</Button></div>
-        {!ids.length && <p className="muted">尚未加入動作。</p>}
+        <p className="muted">{rows.length ? '組數可留空。套用 Template 時，會按組數建立空白 Sets。' : '尚未加入動作。'}</p>
         <ol className="template-order">
-          {ids.map((id, index) => <li key={id}>
-            <span className="set-index">{index + 1}</span><span className="row-text"><strong>{byId.get(id)?.name ?? id}</strong>
-              {byId.get(id)?.archived && <small>已封存</small>}</span>
-            <OrderActions index={index} count={ids.length} label={byId.get(id)?.name ?? id}
-              onMove={delta => setIds(moveItem(ids, index, delta))} onRemove={() => setIds(ids.filter(item => item !== id))} />
-          </li>)}
+          {rows.map((row, index) => {
+            const exercise = byId.get(row.id)
+            const exerciseName = exercise?.name ?? row.id
+            return <li key={row.id}>
+              <div className="template-exercise">
+                <span className="set-index">{index + 1}</span><span className="row-text"><strong>{exerciseName}</strong>
+                  {exercise?.archived && <small>已封存</small>}</span>
+              </div>
+              <label className="template-set-count">組數
+                <input type="number" inputMode="numeric" min={1} max={maxTemplateSetCount} step={1} placeholder="—"
+                  aria-label={`${exerciseName} 組數`} value={row.setCount} onChange={event => {
+                    const setCount = event.target.value
+                    setRows(current => current.map(item => item.id === row.id ? { ...item, setCount } : item))
+                  }} />
+              </label>
+              <OrderActions index={index} count={rows.length} label={exerciseName}
+                onMove={delta => setRows(current => moveItem(current, index, delta))}
+                onRemove={() => setRows(current => current.filter(item => item.id !== row.id))} />
+            </li>
+          })}
         </ol>
         <FormActions action={action} onClose={onClose} />
       </form>
     </Dialog>
-    {picking && <ExercisePicker exercises={snapshot.exercises} excluded={ids} onClose={() => setPicking(false)}
-      onSelect={selected => { setIds([...ids, ...selected.map(exercise => exercise.id)]); setPicking(false) }} />}
+    {picking && <ExercisePicker exercises={snapshot.exercises} excluded={rows.map(row => row.id)} onClose={() => setPicking(false)}
+      onSelect={selected => { setRows(current => [...current, ...selected.map(exercise => ({ id: exercise.id, setCount: '' }))]); setPicking(false) }} />}
   </>
 }
 
