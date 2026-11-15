@@ -2,6 +2,8 @@
 
 Fitness Tracker 是手機優先的繁體中文個人健身 PWA。首次開啟時只有內置動作庫，由你建立自己的 Workout、Template、體重與個人最佳紀錄。網站可部署為 GitHub Pages 靜態網站。
 
+本網站使用 AI（OpenAI Codex）開發。
+
 ## 功能
 
 - **Workout** 支援日期補記、空白或 Template 開始、Sets、動作備註、自動儲存草稿，以及按動作複製該訓練日期之前的最近紀錄。可篩選、修改、複製及刪除歷史，也可查看個別動作的重量與訓練量。

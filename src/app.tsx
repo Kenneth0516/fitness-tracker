@@ -128,6 +128,13 @@ export function App() {
           {action.error && <Notice>{action.error}</Notice>}
         </section>}
         {page}
+        <footer className="site-footer">
+          <p>本網站使用 AI（OpenAI Codex）開發。</p>
+          <div className="site-footer-links">
+            <a href="https://github.com/Kenneth0516/fitness-tracker">原始碼</a>
+            <a href="https://github.com/Kenneth0516/fitness-tracker/blob/main/LICENSE">GNU GPL v3</a>
+          </div>
+        </footer>
       </main>
     </div>
     <nav className="bottom-nav" aria-label="主選單">
