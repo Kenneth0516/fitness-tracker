@@ -79,3 +79,7 @@ Actions 從 `configure-pages` 自動取得 repository base path，改 repository
 `public/workout-hero.webp` 以內建 imagegen 生成並轉為 WebP。生成提示詞為：
 
 > Create a photorealistic wide editorial photograph for the right side of a premium dark fitness log web app hero. Low-angle close-up of a loaded Olympic barbell on matte black rubber floor. Main three large dark metal weight plates at 69% from the left, bar angling diagonally toward the upper right with a gym rack receding behind. Atmospheric charcoal navy gym, cool cobalt and violet rim light tracing plate edges, realistic textured forged metal, soft focus background, strong blacks, and controlled contrast. Left third almost entirely black negative space fading in from the gym. No people, no writing, no numbers, no branding, no UI. Landscape 2:1 composition.
+
+## 授權
+
+Fitness Tracker 的程式碼依 GNU General Public License 第 3 版（`GPL-3.0-only`）授權。完整條款見 [LICENSE](LICENSE)。
