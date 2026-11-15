@@ -1,0 +1,11 @@
+node_modules/
+.npm-cache/
+.pnpm-store/
+.tools/
+dist/
+test-results/
+playwright-report/
+.env*
+*.local
+fitness-tracker-backup*.json
+fitness-tracker-*.csv
